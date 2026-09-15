@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="theme-color" content="#0b0d12">
+  <meta name="color-scheme" content="dark">
+  <title>OpenDraw</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/app.css?v=54">
+</head>
+<body>
+  <div id="app" class="app-shell">
+    <aside id="sidebar" class="sidebar" aria-label="Sessions">
+      <div class="brand-row">
+        <div class="mark" aria-hidden="true">O</div>
+        <div>
+          <strong>OpenDraw</strong>
+          <span>Chat companion</span>
+        </div>
+        <button id="closeSessions" class="icon-button mobile-only" type="button" aria-label="Close sessions">
+          <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6.75 6.75 10.5 10.5M17.25 6.75l-10.5 10.5"/></svg>
+        </button>
+      </div>
+      <div class="sidebar-tools">
+        <button id="newChatButton" class="new-chat-button" type="button">
+          <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.5v13M5.5 12h13"/></svg>
+          <span>New chat</span>
+        </button>
+        <label class="search-wrap">
+          <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.75" cy="10.75" r="5.75"/><path d="m15.2 15.2 4.3 4.3"/></svg>
+          <input id="sessionSearch" type="search" placeholder="Search sessions" autocomplete="off">
+        </label>
+        <div id="projectNav" class="project-nav" aria-label="Projects"></div>
+      </div>
+      <div id="sessionList" class="session-list" role="list"></div>
+      <div class="sidebar-footer">
+        <button id="installButton" class="soft-button hidden" type="button">Install app</button>
+        <button id="unpairButton" class="soft-button danger-soft" type="button">Unpair this phone</button>
+        <strong id="cosSummary">COS status loading…</strong>
+        <span id="serverHint">Private via Tailscale Serve</span>
+      </div>
+    </aside>
+
+    <main class="chat-pane">
+      <header class="topbar">
+        <button id="openSessions" class="icon-button mobile-only menu-button" type="button" aria-label="Open chats">
+          <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7.25h14M5 12h14M5 16.75h14"/></svg>
+        </button>
+        <button id="promptNavigatorButton" class="icon-button prompt-nav-button" type="button" aria-label="Conversation outline" title="Conversation outline">
+          <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 6.5H19M8.5 12H19M8.5 17.5H19"/><circle cx="5" cy="6.5" r="1"/><circle cx="5" cy="12" r="1"/><circle cx="5" cy="17.5" r="1"/></svg>
+        </button>
+        <div class="session-heading">
+          <strong id="activeTitle">OpenDraw</strong>
+          <span id="activeMeta">Connecting…</span>
+        </div>
+        <div class="topbar-actions">
+          <a id="openChatLink" class="chat-link desktop-only hidden" href="#" target="_blank" rel="noopener noreferrer" aria-label="Open this conversation in ChatGPT" title="Open in ChatGPT">
+            <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 5H19v5.5M18.5 5.5 11 13M10 6H7.25A2.25 2.25 0 0 0 5 8.25v8.5A2.25 2.25 0 0 0 7.25 19h8.5A2.25 2.25 0 0 0 18 16.75V14"/></svg>
+          </a>
+          <button id="conversationSearchButton" class="icon-button conversation-search-button" type="button" aria-label="Search conversation" title="Search conversation">
+            <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.75" cy="10.75" r="5.75"/><path d="m15.2 15.2 4.3 4.3"/></svg>
+          </button>
+          <section id="contextStatus" class="context-status hidden" aria-live="polite">
+            <button id="contextStatusButton" class="context-gauge" type="button" aria-label="Open context and compaction details">
+              <span id="contextMeterFill" class="context-gauge-fill" aria-hidden="true"><span class="context-gauge-wave"></span></span>
+              <span class="context-gauge-glass" aria-hidden="true"></span>
+              <span id="contextStatusValue" class="context-gauge-value">0%</span>
+              <span id="contextStatusTitle" class="sr-only">Context window</span>
+              <span id="contextStatusDetail" class="sr-only">Current attached conversation context</span>
+            </button>
+          </section>
+          <button id="moreButton" class="icon-button more-button" type="button" aria-label="Chat controls" title="Chat controls">
+            <svg class="ui-icon dots-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="18" cy="12" r="1.2"/></svg>
+          </button>
+          <div id="connectionBadge" class="connection-badge pending" aria-label="Connection status"><span></span><b>Connecting</b></div>
+        </div>
+      </header>
+
+      <section id="screenMode" class="screen-mode hidden" aria-label="Live desktop screen">
+        <div id="screenModeExpanded" class="screen-mode-expanded hidden">
+          <header class="screen-mode-header">
+            <div class="screen-mode-title">
+              <span class="screen-mode-live-dot active" aria-hidden="true"></span>
+              <div><strong>Live screen</strong><span id="screenLiveStatus">Connecting…</span></div>
+            </div>
+            <div class="screen-mode-actions">
+              <button id="screenFullscreenButton" class="screen-mode-icon-button" type="button" aria-label="View screen fullscreen" title="Fullscreen">
+                <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 4.5h-4v4M15.5 4.5h4v4M8.5 19.5h-4v-4M15.5 19.5h4v-4"/></svg>
+              </button>
+              <button id="screenCloseButton" class="screen-mode-icon-button" type="button" aria-label="Minimize live screen" title="Minimize">
+                <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6.75 6.75 10.5 10.5M17.25 6.75l-10.5 10.5"/></svg>
+              </button>
+            </div>
+          </header>
+          <div id="screenViewport" class="screen-viewport">
+            <video id="screenVideo" class="screen-video" aria-label="Live desktop screen" muted autoplay playsinline></video>
+            <canvas id="screenCanvas" class="screen-canvas hidden" aria-label="Live desktop screen fallback"></canvas>
+            <div id="screenPlaceholder" class="screen-placeholder">
+              <span class="screen-placeholder-grid" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+              <strong>Connecting to your desktop…</strong>
+              <span>Private through this OpenDraw device connection</span>
+            </div>
+            <div class="screen-hud" aria-live="polite">
+              <span class="screen-hud-live"><i></i>LIVE</span>
+              <span id="screenFps">30 FPS max</span>
+              <span id="screenLatency">— ms</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <button id="promptSectionBar" class="prompt-section-bar hidden" type="button" aria-label="Jump to current prompt">
+        <span class="prompt-section-count"><span id="promptSectionIndex">1</span><span>/</span><span id="promptSectionTotal">1</span></span>
+        <span id="promptSectionText" class="prompt-section-text">Current prompt</span>
+        <svg class="ui-icon prompt-section-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+        <span id="promptSectionProgress" class="prompt-section-progress" aria-hidden="true"></span>
+      </button>
+
+      <nav id="mobileToolbar" class="mobile-toolbar mobile-only" aria-label="Conversation navigation">
+        <button id="mobileProjectButton" class="mobile-toolbar-button project" type="button">
+          <span class="mobile-toolbar-icon" aria-hidden="true"><svg class="ui-icon folder-icon" viewBox="0 0 24 24"><path d="M3.75 7.5A2.25 2.25 0 0 1 6 5.25h3.05c.55 0 1.08.2 1.49.57l1.55 1.43H18A2.25 2.25 0 0 1 20.25 9.5v7A2.25 2.25 0 0 1 18 18.75H6a2.25 2.25 0 0 1-2.25-2.25v-9Z"/></svg></span>
+          <span class="mobile-toolbar-value"><strong id="mobileProjectName">Ungrouped</strong><small id="mobileSessionCount">0 chats</small></span>
+          <svg class="ui-icon mobile-toolbar-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+        </button>
+        <button id="mobileNewChatButton" class="mobile-new-chat" type="button" aria-label="New chat" title="New chat">
+          <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.5v13M5.5 12h13"/></svg>
+          <span>New</span>
+        </button>
+      </nav>
+
+      <section id="sessionFacts" class="session-facts" aria-label="Current Chat On Steroids session details"></section>
+      <section id="cosInfo" class="cos-info-strip hidden" aria-label="Additional Chat On Steroids details"></section>
+      <section id="emptyState" class="empty-state hidden">
+        <div class="empty-orb">O</div>
+        <h1 id="emptyTitle">Pick up the conversation anywhere.</h1>
+        <p id="emptyDescription">Your phone mirrors Chat On Steroids’ durable conversation history, model, provider and live session state through your private Tailscale connection.</p>
+      </section>
+
+      <section id="transcript" class="transcript" aria-live="polite"></section>
+
+      <button id="jumpLatestButton" class="jump-latest hidden" type="button" aria-label="Jump to latest message">
+        <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+        <span id="jumpLatestLabel">Latest</span>
+      </button>
+
+      <footer id="composerShell" class="composer-shell">
+        <details id="agentBar" class="agent-bar hidden">
+          <summary>
+            <span class="agent-bar-icon" aria-hidden="true">
+              <svg class="ui-icon" viewBox="0 0 24 24"><path d="M8 8.5a3 3 0 1 1 6 0 3 3 0 0 1-6 0Zm-3.5 9c.5-3 2.7-4.5 6.5-4.5s6 1.5 6.5 4.5M16.5 7.5a2.5 2.5 0 1 1 1.7 4.72M17.25 13.4c1.7.35 2.75 1.28 3.25 2.8"/></svg>
+            </span>
+            <span class="agent-bar-copy"><small>Subagents</small><strong id="agentSummary">Working in parallel</strong></span>
+            <span id="agentCount" class="agent-count">0</span>
+            <svg class="ui-icon agent-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+          </summary>
+          <div id="agentList" class="agent-list"></div>
+        </details>
+        <details id="taskBar" class="task-bar hidden">
+          <summary>
+            <span class="task-copy"><small>Current task</small><strong id="taskSummary">Working on your request</strong></span>
+            <span id="taskProgress" class="task-progress">0 / 0</span>
+            <svg class="ui-icon task-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+          </summary>
+          <div id="taskSteps" class="task-steps"></div>
+        </details>
+        <form id="composer" class="composer">
+          <textarea id="messageInput" rows="1" maxlength="16000" enterkeyhint="enter" placeholder="Message this session…" aria-label="Message"></textarea>
+          <div class="composer-actions-row">
+            <div id="composerOptions" class="composer-options">
+              <button id="modelPickerButton" class="model-picker-trigger" type="button" aria-haspopup="dialog" aria-label="Choose model and reasoning">
+                <span class="model-picker-trigger-copy"><small>Model</small><strong id="composerSummary">COS default</strong></span>
+                <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+              </button>
+              <div class="native-model-controls" aria-hidden="true">
+                <select id="modelSelect" tabindex="-1" aria-label="Model"></select>
+                <select id="reasoningSelect" tabindex="-1" aria-label="Reasoning effort"></select>
+              </div>
+            </div>
+            <span class="composer-actions-spacer" aria-hidden="true"></span>
+            <button id="screenModeButton" class="screen-mode-button" type="button" aria-label="Open live screen" title="Live screen" aria-pressed="false">
+              <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h16v11H4v-11ZM9 20h6M12 16.5V20"/></svg>
+            </button>
+            <button id="voiceButton" class="voice-button" type="button" aria-label="Start voice dictation" title="Voice dictation">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Zm-6-3a6 6 0 0 0 12 0M12 17v4M8.5 21h7"/></svg>
+            </button>
+            <button id="sendButton" class="send-button" type="submit" aria-label="Send message" data-state="idle">
+              <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 18.5v-13M6.5 11 12 5.5 17.5 11"/></svg>
+            </button>
+          </div>
+        </form>
+        <div class="composer-feedback">
+          <div id="sendStatus" class="send-status" aria-live="polite"></div>
+          <div id="voiceStatus" class="voice-status" aria-live="polite"></div>
+        </div>
+        <div id="composerNote" class="composer-note">Checking direct COS send availability…</div>
+      </footer>
+    </main>
+
+    <div id="scrim" class="scrim hidden"></div>
+
+    <div id="sessionSheetBackdrop" class="sheet-backdrop hidden">
+      <section id="sessionSheet" class="session-sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+        <div class="panel-drag-handle" aria-hidden="true"><span></span></div>
+        <header class="sheet-header">
+          <div>
+            <span>Chat controls</span>
+            <strong id="sheetTitle">OpenDraw</strong>
+          </div>
+          <button id="closeSessionSheet" class="icon-button" type="button" aria-label="Close chat controls">
+            <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6.75 6.75 10.5 10.5M17.25 6.75l-10.5 10.5"/></svg>
+          </button>
+        </header>
+
+        <div id="sheetStatus" class="sheet-status"></div>
+
+        <div class="sheet-actions">
+          <button id="refreshButton" class="sheet-action" type="button"><span aria-hidden="true"><svg class="ui-icon" viewBox="0 0 24 24"><path d="M18.5 8.25A7.25 7.25 0 1 0 19.1 14M18.5 4.75v3.5H15"/></svg></span><strong>Refresh</strong><small>Reload phone state</small></button>
+          <a id="sheetOpenChatLink" class="sheet-action hidden" href="#" target="_blank" rel="noopener noreferrer"><span aria-hidden="true"><svg class="ui-icon" viewBox="0 0 24 24"><path d="M13.5 5H19v5.5M18.5 5.5 11 13M10 6H7.25A2.25 2.25 0 0 0 5 8.25v8.5A2.25 2.25 0 0 0 7.25 19h8.5A2.25 2.25 0 0 0 18 16.75V14"/></svg></span><strong>Open ChatGPT</strong><small>Open on this device</small></a>
+          <button id="sheetSearchButton" class="sheet-action" type="button"><span aria-hidden="true"><svg class="ui-icon" viewBox="0 0 24 24"><circle cx="10.75" cy="10.75" r="5.75"/><path d="m15.2 15.2 4.3 4.3"/></svg></span><strong>Search</strong><small>Find in conversation</small></button>
+          <button id="notificationButton" class="sheet-action" type="button"><span aria-hidden="true"><svg class="ui-icon" viewBox="0 0 24 24"><path d="M7 10a5 5 0 0 1 10 0v3.4l1.5 2.6h-13L7 13.4V10Zm3.5 8h3"/></svg></span><strong id="notificationButtonTitle">Answer alerts</strong><small id="notificationButtonDetail">Notify this phone when a response finishes</small></button>
+          <button id="compactButton" class="sheet-action" type="button"><span aria-hidden="true"><svg class="ui-icon" viewBox="0 0 24 24"><path d="M5 8h8M5 12h11M5 16h8M16 5l3 3-3 3"/></svg></span><strong>Compact</strong><small>Continue with more room</small></button>
+          <button id="cancelCompactButton" class="sheet-action danger-sheet hidden" type="button"><span aria-hidden="true"><svg class="ui-icon" viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17"/></svg></span><strong>Cancel compact</strong><small>Stop continuation</small></button>
+        </div>
+
+        <section class="sheet-section">
+          <div class="sheet-section-heading">
+            <div><strong>Automation</strong><span>Use COS goal or loop mode for this chat</span></div>
+            <select id="automationSelect" aria-label="Session automation">
+              <option value="off">Off</option>
+              <option value="goal">Goal</option>
+              <option value="loop">Loop</option>
+            </select>
+          </div>
+          <textarea id="objectiveInput" rows="3" maxlength="16000" placeholder="Optional objective for Goal / Loop…" aria-label="Automation objective"></textarea>
+          <button id="saveAutomationButton" class="sheet-primary" type="button">Apply automation</button>
+        </section>
+
+        <section class="sheet-section">
+          <div class="sheet-section-heading">
+            <div><strong>Queue</strong><span>Messages waiting in Chat On Steroids</span></div>
+            <span id="queueCount" class="count-badge">0</span>
+          </div>
+          <div id="queueList" class="queue-list"></div>
+        </section>
+
+        <section class="sheet-section usage-section">
+          <div class="sheet-section-heading">
+            <div><strong>Usage</strong><span>Latest COS limits when available</span></div>
+          </div>
+          <div id="usageList" class="usage-list"></div>
+        </section>
+
+        <div id="sheetMessage" class="sheet-message" aria-live="polite"></div>
+      </section>
+    </div>
+
+    <div id="modelPickerBackdrop" class="sheet-backdrop model-picker-backdrop hidden">
+      <section id="modelPickerSheet" class="picker-sheet" role="dialog" aria-modal="true" aria-labelledby="modelPickerTitle">
+        <div class="panel-drag-handle" aria-hidden="true"><span></span></div>
+        <header class="sheet-header picker-header">
+          <div>
+            <span>Chat model</span>
+            <strong id="modelPickerTitle">Choose model & reasoning</strong>
+          </div>
+          <button id="closeModelPicker" class="icon-button" type="button" aria-label="Close model picker">
+            <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6.75 6.75 10.5 10.5M17.25 6.75l-10.5 10.5"/></svg>
+          </button>
+        </header>
+        <label class="picker-search">
+          <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.75" cy="10.75" r="5.75"/><path d="m15.2 15.2 4.3 4.3"/></svg>
+          <input id="modelSearchInput" type="search" autocomplete="off" placeholder="Search models" aria-label="Search models">
+        </label>
+        <div class="picker-section-heading"><strong>Models</strong><span id="modelPickerMeta"></span></div>
+        <div id="modelPickerList" class="model-picker-list" role="listbox" aria-label="Available models"></div>
+        <div class="picker-section-heading reasoning-heading"><strong>Reasoning</strong><span>For the selected model</span></div>
+        <div id="reasoningPickerList" class="reasoning-picker-list" aria-label="Reasoning effort"></div>
+      </section>
+    </div>
+
+    <div id="contextSheetBackdrop" class="sheet-backdrop context-sheet-backdrop hidden">
+      <section id="contextSheet" class="context-sheet" role="dialog" aria-modal="true" aria-labelledby="contextSheetTitle">
+        <div class="panel-drag-handle" aria-hidden="true"><span></span></div>
+        <header class="sheet-header">
+          <div>
+            <span>Current chat</span>
+            <strong id="contextSheetTitle">Context window</strong>
+          </div>
+          <button id="closeContextSheet" class="icon-button" type="button" aria-label="Close context details">
+            <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6.75 6.75 10.5 10.5M17.25 6.75l-10.5 10.5"/></svg>
+          </button>
+        </header>
+        <div class="context-sheet-hero">
+          <div id="contextSheetGauge" class="context-sheet-gauge" aria-hidden="true"><span id="contextSheetFill"><span class="context-sheet-wave"></span></span><strong id="contextSheetPercent">0%</strong></div>
+          <div class="context-sheet-summary"><small>Attached context</small><strong id="contextCurrentValue">—</strong><span id="contextStageValue">Ready</span></div>
+        </div>
+        <div class="context-detail-grid">
+          <div><small>Limit</small><strong id="contextLimitValue">—</strong></div>
+          <div><small>Advisory</small><strong id="contextAdvisoryValue">—</strong></div>
+          <div><small>Auto compact</small><strong id="contextAutoValue">—</strong></div>
+          <div><small>Mode</small><strong id="contextModeValue">—</strong></div>
+        </div>
+        <p class="context-explainer">This measures the context currently attached to this conversation, not lifetime usage.</p>
+        <div class="context-actions">
+          <button id="contextCompactButton" class="context-primary" type="button">Compact context</button>
+          <button id="contextCancelCompactButton" class="context-secondary hidden" type="button">Cancel compaction</button>
+        </div>
+        <div id="contextSheetMessage" class="sheet-message" aria-live="polite"></div>
+      </section>
+    </div>
+
+    <div id="conversationPanelBackdrop" class="conversation-panel-backdrop hidden">
+      <section id="conversationPanel" class="conversation-panel" role="dialog" aria-modal="true" aria-labelledby="conversationPanelTitle">
+        <div class="panel-drag-handle" aria-hidden="true"><span></span></div>
+        <header class="conversation-panel-header">
+          <div>
+            <span>Conversation</span>
+            <strong id="conversationPanelTitle">Outline</strong>
+          </div>
+          <button id="closeConversationPanel" class="icon-button" type="button" aria-label="Close conversation panel">
+            <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6.75 6.75 10.5 10.5M17.25 6.75l-10.5 10.5"/></svg>
+          </button>
+        </header>
+        <div class="conversation-panel-tabs" role="tablist" aria-label="Conversation tools">
+          <button id="promptPanelTab" class="conversation-tab active" type="button" role="tab" aria-selected="true">Prompts</button>
+          <button id="searchPanelTab" class="conversation-tab" type="button" role="tab" aria-selected="false">Search</button>
+        </div>
+        <label class="conversation-panel-search">
+          <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.75" cy="10.75" r="5.75"/><path d="m15.2 15.2 4.3 4.3"/></svg>
+          <input id="conversationPanelInput" type="search" autocomplete="off" placeholder="Filter prompts" aria-label="Search current conversation">
+        </label>
+        <div id="conversationSearchControls" class="conversation-search-controls hidden">
+          <span id="conversationSearchSummary">Type to search messages</span>
+          <div>
+            <button id="conversationSearchPrev" type="button" aria-label="Previous search result">↑</button>
+            <button id="conversationSearchNext" type="button" aria-label="Next search result">↓</button>
+          </div>
+        </div>
+        <div id="conversationPanelList" class="conversation-panel-list"></div>
+      </section>
+    </div>
+
+    <div id="toast" class="toast hidden" aria-live="polite"></div>
+
+    <section id="pairing" class="pairing-layer hidden" aria-modal="true" role="dialog" aria-labelledby="pairTitle">
+      <form id="pairForm" class="pair-card">
+        <div class="pair-icon">O</div>
+        <h1 id="pairTitle">Pair this device</h1>
+        <p>Enter the pairing secret shown by the OpenDraw server on your PC. The issued device token stays on this device.</p>
+        <label>
+          Device name
+          <input id="deviceName" type="text" maxlength="80" value="My phone" autocomplete="nickname">
+        </label>
+        <label>
+          Pairing secret
+          <input id="pairingSecret" type="password" minlength="20" required autocomplete="one-time-code" spellcheck="false">
+        </label>
+        <div id="pairError" class="form-error" aria-live="polite"></div>
+        <button class="primary-button" type="submit">Pair securely</button>
+      </form>
+    </section>
+  </div>
+  <script type="module" src="/app.js?v=54"></script>
+</body>
+</html>

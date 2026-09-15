@@ -1,0 +1,17 @@
+{
+  "name": "opendraw-companion",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Secure phone-first companion for Chat On Steroids sessions and live input",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "test": "node --test tests/*.test.js"
+  },
+  "dependencies": {
+    "web-push": "^3.6.7"
+  }
+}
